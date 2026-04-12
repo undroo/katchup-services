@@ -1,0 +1,42 @@
+---
+description: FastAPI and Python conventions for backend microservices
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# FastAPI / Python microservices
+
+## API design
+
+- Use **Pydantic models** for request/response bodies and query params where practical.
+- Return appropriate **HTTP status codes**; use FastAPI `HTTPException` or custom exception handlers for consistent error JSON (`detail`, optional `code`).
+- Prefer **dependency injection** (`Depends`) for config, DB clients, and auth—not global singletons hidden in modules.
+- Add **health** routes (`/health` or `/ready`) for orchestration.
+
+## Structure (per service)
+
+- `main.py` or `app/main.py`: FastAPI app factory or instance, router inclusion, lifespan.
+- `routers/`: route modules by domain.
+- `schemas/`: Pydantic models shared across routers.
+- `services/` or `domain/`: business logic kept out of route handlers.
+- `settings.py`: load from environment (e.g. `pydantic-settings`).
+
+## Quality
+
+- Type hints on public functions and route handlers.
+- **Async** I/O for network-bound work (`httpx.AsyncClient`, DB drivers that support async).
+- Log with **structured context** (request id, service name); avoid logging secrets or full payloads with PII.
+
+## Examples
+
+```python
+# BAD: logic-heavy handler, untyped dict
+@app.post("/items")
+def create_item(body: dict):
+    db.execute(f"INSERT ... {body['name']}")  # injection risk, no validation
+
+# GOOD: schema, delegated service, typed
+@app.post("/items", response_model=ItemOut)
+async def create_item(body: ItemCreate, svc: ItemService = Depends(get_item_service)):
+    return await svc.create(body)
+```

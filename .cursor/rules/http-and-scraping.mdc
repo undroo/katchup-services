@@ -1,0 +1,30 @@
+---
+description: HTTP clients, scraping, and external fetch patterns
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# HTTP clients and scraping
+
+Use this when implementing **outbound HTTP**, **HTML/XML fetching**, or **scrapers** inside a service.
+
+## Clients
+
+- Prefer **`httpx`** (async) over `requests` in async FastAPI services.
+- Set **timeouts** on every client; avoid unbounded reads.
+- Reuse a client where possible (lifespan / dependency), with connection limits.
+
+## Scraping and robots
+
+- Respect **`robots.txt`** and site terms when building scrapers; document scope and rate limits per target.
+- **Rate limit** and backoff (retry with jitter) to avoid hammering sources.
+- Parse HTML with **`beautifulsoup4`** / **`lxml`** or similar; avoid regex for HTML structure.
+
+## Reliability
+
+- Treat external pages as **fragile**: version selectors, log parse failures, and fail gracefully (partial results + metrics, not silent wrong data).
+- Do not block the event loop: use async HTTP or run CPU-heavy parsing in **`asyncio.to_thread`** when needed.
+
+## Safety
+
+- Validate and normalize URLs; avoid SSRF (do not fetch arbitrary user-supplied internal URLs without an allowlist).

@@ -1,0 +1,18 @@
+---
+description: Repo purpose and boundaries for katchup-services microservices
+alwaysApply: true
+---
+
+# katchup-services
+
+This repository hosts **Python microservices** that back the **Katchup mobile app**. Services are independent deployable units; responsibilities differ (AI analysis, web scraping, APIs, etc.) but share common expectations below.
+
+## Expectations
+
+- **Stack**: Python 3.11+, **FastAPI** for HTTP APIs unless a service truly does not expose HTTP.
+- **Layout**: One service per top-level directory (or under `services/` if introduced later). Keep service-local `pyproject.toml` / dependencies; avoid a single giant shared app unless there is a deliberate shared package.
+- **Contracts**: Mobile clients and other services depend on **stable JSON schemas** and versioning (URL prefix or headers). Document breaking changes.
+- **Secrets**: No credentials in code. Use environment variables or the runtime secret mechanism the project adopts.
+- **Ops**: Each service should be runnable locally (document env vars and a single entry command) and container-friendly.
+
+When adding code, prefer matching patterns in sibling services over inventing one-off structure.

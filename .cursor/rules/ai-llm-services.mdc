@@ -1,0 +1,25 @@
+---
+description: AI / LLM integration patterns for analysis and enrichment endpoints
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# AI / LLM integration
+
+Use when adding **LLM calls**, **embeddings**, or **structured AI analysis** to a FastAPI service.
+
+## Design
+
+- Keep **provider details** (OpenAI, Anthropic, etc.) behind a thin adapter or module; routes should depend on a small interface (e.g. `analyze(text) -> AnalysisResult`).
+- Separate **prompt construction** from transport: templates or functions that return messages + model params.
+- Prefer **structured outputs** (JSON schema / tool-style parsing) when the mobile app needs machine-readable fields; validate with Pydantic after the model returns.
+
+## Operations
+
+- **Timeout** and **retry** policy per provider; surface degraded responses explicitly (503/424) rather than hanging.
+- Log **request ids** and model id; avoid logging **prompts** or **PII** at info level in production.
+- Track **token usage** and costs if billing matters; cap input size server-side.
+
+## Testing
+
+- Mock the provider client in tests; keep golden examples of parsed outputs for regression tests where useful.
