@@ -1,0 +1,12 @@
+---
+description: Visual and UX conventions for the Activity Hub web UI (TypeScript + Tailwind).
+globs: activity-hub/**/*
+alwaysApply: false
+---
+
+# Activity Hub design
+
+- **Baseline:** [TapTap Design System](https://www.freefigmatemplates.com/gallery/taptap-design-system) (Figma). There is no published npm package; treat it as the reference for hierarchy, spacing, and component feel.
+- **Implementation:** Express tokens in Tailwind and CSS `@theme` in [`activity-hub/src/index.css`](activity-hub/src/index.css)—rounded cards (`--radius-card`), soft neutrals (`--color-surface`, `--color-ink-muted`), restrained accent (`--color-accent`), light elevation (`--shadow-card`).
+- **Typography:** Prefer **Inter** (loaded in `index.html`) for UI copy; use `font-mono` sparingly for site keys and machine-readable values.
+- **When extending:** Add new screens or components in the same TapTap-inspired language (clear section headers, generous padding, subtle borders) rather than ad-hoc one-off styles.

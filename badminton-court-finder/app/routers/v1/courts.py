@@ -3,11 +3,20 @@ from datetime import date
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.schemas.courts import AvailabilityResponse
+from app.schemas.courts import AvailabilityResponse, SiteInfo, SitesListResponse
 from app.scrapers.sites import SITE_REGISTRY
 from app.scrapers.yepbooking import YepBookingScraper
 
 router = APIRouter(prefix="/courts", tags=["courts"])
+
+
+@router.get("/sites", response_model=SitesListResponse)
+async def list_sites() -> SitesListResponse:
+    sites = [
+        SiteInfo(key=key, venue_name=cfg.venue_name, timezone=cfg.timezone)
+        for key, cfg in sorted(SITE_REGISTRY.items(), key=lambda kv: kv[0])
+    ]
+    return SitesListResponse(sites=sites)
 
 
 def _get_http_client() -> httpx.AsyncClient:

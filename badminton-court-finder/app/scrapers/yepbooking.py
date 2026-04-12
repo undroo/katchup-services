@@ -41,6 +41,9 @@ class YepBookingSiteConfig:
     base_url: str  # e.g. "https://badmintoncentre-botany.yepbooking.com.au"
     sport_id: int  # id_sport query param
     timezone: str  # e.g. "Australia/Sydney"
+    # Some multi-location installs use id_location on ajax.schema.php; NBC uses
+    # distinct id_sport values per branch instead (see sites/nbc.py).
+    location_id: int | None = None
 
 
 def _normalize_time(raw: str) -> str:
@@ -114,10 +117,8 @@ class YepBookingScraper(BaseScraper):
         resp.raise_for_status()
         logger.debug("Session initialised for %s", self.config.site_key)
 
-    async def _fetch_schema(
-        self, client: httpx.AsyncClient, target_date: date
-    ) -> str:
-        params = {
+    def _schema_params(self, target_date: date) -> dict[str, str]:
+        params: dict[str, str] = {
             "day": str(target_date.day),
             "month": str(target_date.month),
             "year": str(target_date.year),
@@ -128,9 +129,16 @@ class YepBookingScraper(BaseScraper):
             "schema_fixed_date": "",
             "default_view": "day",
         }
+        if self.config.location_id is not None:
+            params["id_location"] = str(self.config.location_id)
+        return params
+
+    async def _fetch_schema(
+        self, client: httpx.AsyncClient, target_date: date
+    ) -> str:
         resp = await client.get(
             f"{self.config.base_url}/ajax/ajax.schema.php",
-            params=params,
+            params=self._schema_params(target_date),
             headers=self._headers(),
         )
         resp.raise_for_status()

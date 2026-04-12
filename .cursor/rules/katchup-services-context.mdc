@@ -14,5 +14,6 @@ This repository hosts **Python microservices** that back the **Katchup mobile ap
 - **Contracts**: Mobile clients and other services depend on **stable JSON schemas** and versioning (URL prefix or headers). Document breaking changes.
 - **Secrets**: No credentials in code. Use environment variables or the runtime secret mechanism the project adopts.
 - **Ops**: Each service should be runnable locally (document env vars and a single entry command) and container-friendly.
+- **Supabase**: Some services (for example the badminton court finder) may persist data to Supabase. Schema DDL is maintained and applied **manually** unless the repo includes an explicit Supabase migration workflow the team uses.
 
 When adding code, prefer matching patterns in sibling services over inventing one-off structure.

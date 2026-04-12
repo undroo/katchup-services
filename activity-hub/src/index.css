@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+/* TapTap-inspired tokens: soft neutrals, rounded surfaces, clear hierarchy */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1rem;
+  --radius-control: 0.625rem;
+  --color-surface: #f8f7fa;
+  --color-surface-elevated: #ffffff;
+  --color-ink: #0f0d14;
+  --color-ink-muted: #5c5666;
+  --color-border: #e8e6ec;
+  --color-accent: #6366f1;
+  --color-accent-muted: #eef2ff;
+  --shadow-card: 0 1px 2px rgb(15 13 20 / 0.04), 0 8px 24px rgb(15 13 20 / 0.06);
+}
+
+@layer base {
+  body {
+    @apply m-0 min-h-svh bg-[var(--color-surface)] font-sans text-[var(--color-ink)] antialiased;
+  }
+}

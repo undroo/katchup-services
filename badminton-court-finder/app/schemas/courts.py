@@ -31,3 +31,13 @@ class AvailabilityResponse(BaseModel):
     date: date
     courts: List[CourtAvailability]
     scraped_at: datetime
+
+
+class SiteInfo(BaseModel):
+    key: str
+    venue_name: str
+    timezone: str
+
+
+class SitesListResponse(BaseModel):
+    sites: List[SiteInfo]
