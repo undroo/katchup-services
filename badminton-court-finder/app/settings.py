@@ -8,14 +8,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def _get_env_file_from_parent_env_folder() -> str:
     """
     Returns the path to the .env file inside the 'env' directory,
-    which is a sibling of the current file's parent (i.e., ../../env/.env relative to this file).
+    which is a sibling of the project root (i.e., ../../../env/.env relative to this file).
     """
     # Get the current file's directory (app/)
     app_dir = Path(__file__).parent.absolute()
     # Get the parent of the current file's directory (project root)
     repo_root = app_dir.parent
-    # The env folder: <repo_root>/env/.env
-    env_folder = repo_root / "env"
+    # The new env folder location: parent of repo_root (/path/to/repo/../env/.env)
+    env_folder = repo_root.parent / "env"
     env_file = env_folder / ".env"
     return str(env_file) if env_file.exists() else None
 
