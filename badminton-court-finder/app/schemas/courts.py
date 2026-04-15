@@ -31,6 +31,8 @@ class AvailabilityResponse(BaseModel):
     date: date
     courts: List[CourtAvailability]
     scraped_at: datetime
+    # True when data was read from Supabase but exceeded max age and min scrape interval blocked refresh.
+    served_stale: Optional[bool] = None
 
 
 class SiteInfo(BaseModel):
@@ -41,3 +43,28 @@ class SiteInfo(BaseModel):
 
 class SitesListResponse(BaseModel):
     sites: List[SiteInfo]
+
+
+class AvailabilityRefreshBody(BaseModel):
+    site: str
+    date: date
+
+
+class AvailabilityBatchBody(BaseModel):
+    site: str
+    dates: List[date]
+
+
+class AvailabilityDayItem(BaseModel):
+    """One calendar day in a batch response."""
+
+    date: date
+    ok: bool
+    data: Optional[AvailabilityResponse] = None
+    error: Optional[str] = None
+
+
+class AvailabilityBatchResponse(BaseModel):
+    site: str
+    venue_name: str
+    days: List[AvailabilityDayItem]

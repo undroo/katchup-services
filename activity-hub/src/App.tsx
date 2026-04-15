@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  fetchAvailability,
+  fetchAvailabilityBatch,
   fetchSites,
   type AvailabilityResponse,
   type SiteInfo,
@@ -10,13 +10,10 @@ import {
   countAvailableCourts,
   filterKeysByWindow,
 } from './lib/aggregate'
-import { mapPool } from './lib/concurrency'
 import { nextSydneyDates, sydneyISODay } from './lib/dates'
 import { parseSlotKey } from './lib/time'
 
 const DATE_LABEL_TZ = 'Australia/Sydney'
-const FETCH_CONCURRENCY = 5
-
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => i)
 
 /** Calendar days from today (Sydney) to load and show. */
@@ -149,11 +146,7 @@ export default function App() {
       return
     }
 
-    const tasks = selectedSites.flatMap((site) =>
-      dates.map((date) => ({ site, date })),
-    )
-
-    /* eslint-disable react-hooks/set-state-in-effect -- loading flags before parallel availability fetches */
+    /* eslint-disable react-hooks/set-state-in-effect -- loading flags before availability batch fetches */
     setWeekLoading(true)
     setGridBySite((prev) => {
       const next: Record<string, SiteGrid> = { ...prev }
@@ -170,29 +163,38 @@ export default function App() {
 
     let cancelled = false
 
-    void mapPool(tasks, FETCH_CONCURRENCY, async ({ site, date }) => {
-      try {
-        const data = await fetchAvailability(site, date)
-        if (cancelled) return
-        setGridBySite((g) => ({
-          ...g,
-          [site]: {
-            ...g[site],
-            [date]: { status: 'ok', data },
-          },
-        }))
-      } catch (e) {
-        if (cancelled) return
-        const message = e instanceof Error ? e.message : 'Unknown error'
-        setGridBySite((g) => ({
-          ...g,
-          [site]: {
-            ...g[site],
-            [date]: { status: 'err', message },
-          },
-        }))
-      }
-    }).finally(() => {
+    void Promise.all(
+      selectedSites.map(async (site) => {
+        try {
+          const batch = await fetchAvailabilityBatch(site, dates)
+          if (cancelled) return
+          setGridBySite((g) => {
+            const row: SiteGrid = { ...g[site] }
+            for (const day of batch.days) {
+              if (day.ok && day.data) {
+                row[day.date] = { status: 'ok', data: day.data }
+              } else {
+                row[day.date] = {
+                  status: 'err',
+                  message: day.error ?? 'Unknown error',
+                }
+              }
+            }
+            return { ...g, [site]: row }
+          })
+        } catch (e) {
+          if (cancelled) return
+          const message = e instanceof Error ? e.message : 'Unknown error'
+          setGridBySite((g) => {
+            const row: SiteGrid = { ...g[site] }
+            for (const date of dates) {
+              row[date] = { status: 'err', message }
+            }
+            return { ...g, [site]: row }
+          })
+        }
+      }),
+    ).finally(() => {
       if (!cancelled) setWeekLoading(false)
     })
 

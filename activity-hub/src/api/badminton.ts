@@ -30,6 +30,19 @@ export interface SitesListResponse {
   sites: SiteInfo[]
 }
 
+export interface AvailabilityDayItem {
+  date: string
+  ok: boolean
+  data?: AvailabilityResponse
+  error?: string | null
+}
+
+export interface AvailabilityBatchResponse {
+  site: string
+  venue_name: string
+  days: AvailabilityDayItem[]
+}
+
 export function getBadmintonBaseUrl(): string {
   const raw = import.meta.env.VITE_BADMINTON_BASE_URL as string | undefined
   return (raw?.replace(/\/$/, '') || '/api/badminton').replace(/\/$/, '')
@@ -65,4 +78,17 @@ export async function fetchAvailability(
   const q = new URLSearchParams({ site, date })
   const res = await fetch(`${base}/v1/courts/availability?${q}`)
   return parseJson<AvailabilityResponse>(res)
+}
+
+export async function fetchAvailabilityBatch(
+  site: string,
+  dates: string[],
+): Promise<AvailabilityBatchResponse> {
+  const base = getBadmintonBaseUrl()
+  const res = await fetch(`${base}/v1/courts/availability/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ site, dates }),
+  })
+  return parseJson<AvailabilityBatchResponse>(res)
 }

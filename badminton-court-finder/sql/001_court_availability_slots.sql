@@ -38,9 +38,16 @@ CREATE INDEX court_availability_slots_session_date_idx ON public.court_availabil
 
 ALTER TABLE public.court_availability_slots ENABLE ROW LEVEL SECURITY;
 
--- Backend/service role bypasses RLS. If the mobile client reads with the anon key, allow SELECT e.g.:
--- CREATE POLICY court_availability_slots_public_read ON public.court_availability_slots
---   FOR SELECT TO anon, authenticated USING (true);
+-- badminton-court-finder uses SUPABASE_ANON_KEY against PostgREST. Without these, writes return 401/RLS errors.
+-- Tighten USING / WITH CHECK for your threat model if the anon key is ever exposed to untrusted clients.
+CREATE POLICY court_availability_slots_anon_select ON public.court_availability_slots
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY court_availability_slots_anon_insert ON public.court_availability_slots
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY court_availability_slots_anon_delete ON public.court_availability_slots
+  FOR DELETE TO anon USING (true);
 
 COMMENT ON TABLE public.court_availability_slots IS 'One row per court time slot with embedded venue fields; maps to AvailabilityResponse + nested CourtSlot in app/schemas/courts.py.';
 

@@ -93,8 +93,6 @@ class YepBookingScraper(BaseScraper):
                     if time_key in prices:
                         slot.price = prices[time_key]
 
-        # TODO: persist to database
-
         return AvailabilityResponse(
             site=self.config.site_key,
             venue_name=self.config.venue_name,
