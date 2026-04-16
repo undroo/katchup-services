@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -14,7 +15,7 @@ PLACES_SEARCH_TEXT_URL = "https://places.googleapis.com/v1/places:searchText"
 # Field paths for Text Search (New); no spaces in X-Goog-FieldMask.
 _TEXT_SEARCH_FIELD_MASK = (
     "places.id,places.displayName,places.formattedAddress,"
-    "places.location,places.rating,places.priceLevel"
+    "places.location,places.rating,places.priceLevel,places.photos"
 )
 
 # Sydney CBD-ish bias when venue_timezone is Australia/Sydney (meters).
@@ -46,6 +47,70 @@ class PlaceEnrichment:
     location: str | None
     rating: float | None
     price_level: int | None
+    preview_image_url: str | None
+
+
+def _first_photo_name(place: dict[str, Any]) -> str | None:
+    photos = place.get("photos")
+    if not isinstance(photos, list) or not photos:
+        return None
+    first = photos[0]
+    if isinstance(first, dict):
+        n = first.get("name")
+        if isinstance(n, str) and n.strip():
+            return n.strip()
+    return None
+
+
+def resolve_place_photo_url(
+    client: httpx.Client,
+    api_key: str,
+    photo_resource_name: str,
+    *,
+    max_height_px: int = 400,
+    timeout: float = 30.0,
+) -> str | None:
+    """
+    GET Place Photo (New) media; follow redirects to the CDN image URL.
+
+    Stores the final https URL (typically googleusercontent.com) so we do not persist the API key.
+    """
+    name = photo_resource_name.strip()
+    if not name:
+        return None
+    # Resource name is path-shaped, e.g. places/ChIJ.../photos/AWn5...
+    path = quote(name, safe="/")
+    url = f"https://places.googleapis.com/v1/{path}/media"
+    headers = {
+        "X-Goog-Api-Key": api_key,
+    }
+    resp = client.get(
+        url,
+        params={"maxHeightPx": max_height_px},
+        headers=headers,
+        follow_redirects=True,
+        timeout=timeout,
+    )
+    if not resp.is_success:
+        logger.warning(
+            "Place photo media failed: status=%s name=%s",
+            resp.status_code,
+            name[:120],
+        )
+        return None
+    final = str(resp.url)
+    if not final.startswith("https://"):
+        return None
+    ct = (resp.headers.get("content-type") or "").lower()
+    # Inline image on the Places host is not a shareable URL (no key on client).
+    if ct.startswith("image/") and "places.googleapis.com" in final:
+        logger.warning(
+            "Place photo returned inline image on places.googleapis.com; skip preview_image_url"
+        )
+        return None
+    if "places.googleapis.com" in final:
+        return None
+    return final
 
 
 def _display_name_text(place: dict[str, Any]) -> str | None:
@@ -97,6 +162,28 @@ def _parse_place(place: dict[str, Any]) -> PlaceEnrichment | None:
         location=_display_name_text(place),
         rating=rating,
         price_level=price_level,
+        preview_image_url=None,
+    )
+
+
+def parse_place_with_photo_url(
+    place: dict[str, Any],
+    *,
+    preview_image_url: str | None,
+) -> PlaceEnrichment | None:
+    """Like _parse_place but attaches a resolved preview_image_url (CDN) if provided."""
+    base = _parse_place(place)
+    if base is None:
+        return None
+    return PlaceEnrichment(
+        google_place_id=base.google_place_id,
+        address=base.address,
+        latitude=base.latitude,
+        longitude=base.longitude,
+        location=base.location,
+        rating=base.rating,
+        price_level=base.price_level,
+        preview_image_url=preview_image_url,
     )
 
 
@@ -166,4 +253,13 @@ def search_text_first_place(
     first = places[0]
     if not isinstance(first, dict):
         return None
-    return _parse_place(first)
+    photo_name = _first_photo_name(first)
+    preview_url: str | None = None
+    if photo_name:
+        preview_url = resolve_place_photo_url(client, api_key, photo_name)
+        if preview_url is None:
+            logger.info(
+                "No redirect URL for place photo; leaving preview_image_url unset (place id=%s)",
+                first.get("id"),
+            )
+    return parse_place_with_photo_url(first, preview_image_url=preview_url)

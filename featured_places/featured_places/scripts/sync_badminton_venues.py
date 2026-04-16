@@ -1,6 +1,10 @@
 """
 Sync featured_places from distinct badminton venues in court_availability_slots.
 
+Writes name, court_site_key, kind, venue_timezone (in extra), and timestamps.
+Preview thumbnails (`preview_image_url`) are not available from court_availability_slots; run
+`enrich-featured-places-google` after sync to fill Google fields including preview_image_url.
+
 Environment (same as badminton-court-finder; loaded from katchup-services/env/.env when present):
   SUPABASE_URL               — project URL (https://xxx.supabase.co)
   SUPABASE_ANON_KEY          — reads court_availability_slots

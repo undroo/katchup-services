@@ -357,6 +357,7 @@ CREATE TABLE public.featured_places (
   latitude double precision,
   longitude double precision,
   google_place_id text,
+  preview_image_url text,
   tags ARRAY DEFAULT '{}'::text[],
   rating double precision,
   price_level integer,

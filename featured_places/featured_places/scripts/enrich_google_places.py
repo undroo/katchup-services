@@ -1,6 +1,9 @@
 """
 Fill Google Places fields on featured_places (after sync_badminton_venues).
 
+Populates address, coordinates, rating, price_level, google_place_id, and preview_image_url
+(when the Places Photo API yields a redirect to a public CDN URL).
+
 Requires:
   - SUPABASE_URL, SUPABASE_ANON_KEY (read featured_places; PATCH allowed for anon per RLS).
   - SUPABASE_SERVICE_ROLE_KEY recommended for writes (same as sync script).
@@ -47,6 +50,7 @@ def _enrichment_to_patch_body(pe: PlaceEnrichment) -> dict[str, Any]:
         "location": pe.location,
         "rating": pe.rating,
         "price_level": pe.price_level,
+        "preview_image_url": pe.preview_image_url,
         "updated_at": _iso_now(),
     }
 
@@ -155,7 +159,12 @@ def main(argv: list[str] | None = None) -> int:
                 logger.info("DRY-RUN would PATCH id=%s %s", row_id, body)
             else:
                 patch_featured_place_fields(client, settings, row_id, body)
-                logger.info("PATCH id=%s google_place_id=%s", row_id, pe.google_place_id)
+                logger.info(
+                    "PATCH id=%s google_place_id=%s preview_image_url=%s",
+                    row_id,
+                    pe.google_place_id,
+                    "set" if pe.preview_image_url else "null",
+                )
 
             processed += 1
             if args.sleep > 0:
