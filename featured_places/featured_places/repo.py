@@ -21,6 +21,14 @@ from featured_places.settings import Settings
 
 logger = logging.getLogger(__name__)
 
+# Must match badminton-court-finder app/db/venue_tags.py and sql/003_court_availability_slots_tags.sql.
+BADMINTON_COURT_VENUE_TAGS: tuple[str, ...] = (
+    "sport:badminton",
+    "environment:indoors",
+    "access:private",
+    "place_type:court",
+)
+
 TABLE_SLOTS = "court_availability_slots"
 TABLE_FEATURED = "featured_places"
 _PAGE_SIZE = 1000
@@ -120,6 +128,7 @@ def venue_rows_to_featured_payloads(venues: list[dict[str, str]]) -> list[dict[s
                 "name": v["venue_name"],
                 "court_site_key": sk,
                 "kind": "badminton_court",
+                "tags": list(BADMINTON_COURT_VENUE_TAGS),
                 "extra": {"venue_timezone": v["venue_timezone"]},
                 "updated_at": now,
             }

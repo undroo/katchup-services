@@ -1,7 +1,7 @@
 """
 Sync featured_places from distinct badminton venues in court_availability_slots.
 
-Writes name, court_site_key, kind, venue_timezone (in extra), and timestamps.
+Writes name, court_site_key, kind, tags (canonical badminton/indoor/private/court), venue_timezone (in extra), and timestamps.
 Preview thumbnails (`preview_image_url`) are not available from court_availability_slots; run
 `enrich-featured-places-google` after sync to fill Google fields including preview_image_url.
 

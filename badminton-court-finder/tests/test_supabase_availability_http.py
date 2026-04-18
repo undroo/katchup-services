@@ -89,6 +89,10 @@ async def test_replace_slots_for_day_delete_then_post():
         posted = post_route.calls.last.request.content.decode()
         assert "Australia/Sydney" in posted
         assert "08:00:00" in posted
+        assert "sport:badminton" in posted
+        assert "environment:indoors" in posted
+        assert "access:private" in posted
+        assert "place_type:court" in posted
 
 
 @pytest.mark.asyncio
@@ -241,3 +245,4 @@ async def test_replace_slots_many_days_delete_in_then_chunked_post():
         assert post_route.call_count == 1
         posted = post_route.calls.last.request.content.decode()
         assert "2026-04-14" in posted and "2026-04-15" in posted
+        assert "sport:badminton" in posted

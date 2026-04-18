@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 
+from app.db.venue_tags import BADMINTON_COURT_FINDER_VENUE_TAGS
 from app.schemas.courts import (
     AvailabilityResponse,
     CourtAvailability,
@@ -100,6 +101,7 @@ def rows_from_availability(response: AvailabilityResponse) -> list[dict[str, Any
                     "status": slot.status.value,
                     "price": slot.price,
                     "scraped_at": scraped_iso,
+                    "tags": list(BADMINTON_COURT_FINDER_VENUE_TAGS),
                 }
             )
     return rows
